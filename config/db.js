@@ -47,33 +47,39 @@ function handleDbFatal(err, context) {
     process.exit(1);
 }
 
-/** Read DB_HOST/DB_USER/... or a single DATABASE_URL / MYSQL_URL. */
-function resolveDbConfig() {
-    const rawUrl =
-        process.env.DATABASE_URL ||
-        process.env.MYSQL_URL ||
-        process.env.MYSQL_PUBLIC_URL;
-
-    if (rawUrl) {
-        try {
-            const parsed = new URL(rawUrl);
-            const config = {
-                host: parsed.hostname,
-                user: decodeURIComponent(parsed.username || ""),
-                password: decodeURIComponent(parsed.password || ""),
-                database: decodeURIComponent(parsed.pathname.replace(/^\//, "")),
-                port: parseInt(parsed.port || "3306", 10),
-                sslFromUrl: parsed.searchParams.get("ssl") === "true",
-            };
-            if (!config.host || !config.user || !config.database) {
-                throw new Error("DATABASE_URL must include host, user, and database name");
-            }
-            return config;
-        } catch (e) {
-            throw new Error(`Invalid DATABASE_URL: ${e.message}`);
-        }
+/** Parse mysql://user:pass@host:port/db — uses last @ so passwords may contain @. */
+function parseMysqlConnectionString(raw) {
+    let s = String(raw).trim().replace(/^["']|["']$/g, "");
+    s = s.replace(/^jdbc:mysql:\/\//i, "");
+    s = s.replace(/^mysql2:\/\//i, "mysql://");
+    if (!/^mysql:\/\//i.test(s)) {
+        if (/^[^/]+@[^/]+/.test(s)) s = `mysql://${s}`;
+        else throw new Error("must start with mysql://");
     }
+    s = s.replace(/^mysql:\/\//i, "");
 
+    const at = s.lastIndexOf("@");
+    if (at === -1) throw new Error("missing @ between credentials and host");
+
+    const userPass = s.slice(0, at);
+    const hostPart = s.slice(at + 1).split("?")[0];
+
+    const colon = userPass.indexOf(":");
+    const user = decodeURIComponent(colon === -1 ? userPass : userPass.slice(0, colon));
+    const password = decodeURIComponent(colon === -1 ? "" : userPass.slice(colon + 1));
+
+    const slash = hostPart.indexOf("/");
+    const hostPort = slash === -1 ? hostPart : hostPart.slice(0, slash);
+    const database = slash === -1 ? "" : decodeURIComponent(hostPart.slice(slash + 1));
+
+    const portSep = hostPort.lastIndexOf(":");
+    const host = portSep === -1 ? hostPort : hostPort.slice(0, portSep);
+    const port = portSep === -1 ? 3306 : parseInt(hostPort.slice(portSep + 1), 10);
+
+    return { host, user, password, database, port, sslFromUrl: false };
+}
+
+function resolveFromParts() {
     return {
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
@@ -82,6 +88,32 @@ function resolveDbConfig() {
         port: parseInt(process.env.DB_PORT || "3306", 10),
         sslFromUrl: false,
     };
+}
+
+/** Read DB_HOST/DB_USER/... or a single DATABASE_URL / MYSQL_URL. */
+function resolveDbConfig() {
+    // Explicit DB_HOST wins — avoids broken DATABASE_URL blocking deploy
+    if (process.env.DB_HOST) {
+        return resolveFromParts();
+    }
+
+    const rawUrl =
+        process.env.DATABASE_URL ||
+        process.env.MYSQL_URL ||
+        process.env.MYSQL_PUBLIC_URL;
+
+    if (rawUrl) {
+        try {
+            return parseMysqlConnectionString(rawUrl);
+        } catch (e) {
+            throw new Error(
+                `Invalid DATABASE_URL: ${e.message}. ` +
+                    "Fix the URL or remove DATABASE_URL and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME instead."
+            );
+        }
+    }
+
+    return resolveFromParts();
 }
 
 function isLocalHost(host) {
