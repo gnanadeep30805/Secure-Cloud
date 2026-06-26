@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "build": "node scripts/prepare-vercel.js",
     "clear-data": "node scripts/clear-all-data.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

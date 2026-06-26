@@ -1,24 +1,33 @@
 const mysql = require("mysql2");
 require("dotenv").config();
 
+const isServerless = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+
 let db;
+let dbInitError = null;
+let poolReady = false;
+let migrationsDone = false;
 const readyCallbacks = [];
-let dbMigrationsDone = false;
+let bootstrapComplete = false;
 
 function getDB() {
     return db;
 }
 
-/** Call after pool is up and all CREATE + migrations finished (avoids user_id race). */
+getDB.isReady = () => poolReady && !dbInitError && !!db;
+getDB.migrationsDone = () => migrationsDone;
+getDB.getInitError = () => dbInitError;
+
+/** Call after pool is up (and migrations finished on local dev). */
 getDB.onReady = function onReady(fn) {
     if (typeof fn !== "function") return;
-    if (dbMigrationsDone) setImmediate(fn);
+    if (bootstrapComplete) setImmediate(fn);
     else readyCallbacks.push(fn);
 };
 
-function signalDbReady() {
-    if (dbMigrationsDone) return;
-    dbMigrationsDone = true;
+function signalBootstrapComplete() {
+    if (bootstrapComplete) return;
+    bootstrapComplete = true;
     readyCallbacks.splice(0).forEach((fn) => {
         try {
             fn();
@@ -28,74 +37,195 @@ function signalDbReady() {
     });
 }
 
-// 🔹 Step 1: Temporary connection (NO database selected)
-const tempConnection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT
-});
+function handleDbFatal(err, context) {
+    console.error(`❌ ${context}:`, err);
+    dbInitError = err;
+    if (isServerless) {
+        signalBootstrapComplete();
+        return;
+    }
+    process.exit(1);
+}
 
-tempConnection.connect((err) => {
-    if (err) {
-        console.error("❌ MySQL temp connection failed:", err);
-        process.exit(1);
+/** Read DB_HOST/DB_USER/... or a single DATABASE_URL / MYSQL_URL. */
+function resolveDbConfig() {
+    const rawUrl =
+        process.env.DATABASE_URL ||
+        process.env.MYSQL_URL ||
+        process.env.MYSQL_PUBLIC_URL;
+
+    if (rawUrl) {
+        try {
+            const parsed = new URL(rawUrl);
+            const config = {
+                host: parsed.hostname,
+                user: decodeURIComponent(parsed.username || ""),
+                password: decodeURIComponent(parsed.password || ""),
+                database: decodeURIComponent(parsed.pathname.replace(/^\//, "")),
+                port: parseInt(parsed.port || "3306", 10),
+                sslFromUrl: parsed.searchParams.get("ssl") === "true",
+            };
+            if (!config.host || !config.user || !config.database) {
+                throw new Error("DATABASE_URL must include host, user, and database name");
+            }
+            return config;
+        } catch (e) {
+            throw new Error(`Invalid DATABASE_URL: ${e.message}`);
+        }
     }
 
-    console.log("✅ MySQL temp connected");
-
-    // 🔹 Step 2: Create DB if not exists
-    const dbName = process.env.DB_NAME;
-
-    tempConnection.query(
-        `CREATE DATABASE IF NOT EXISTS \`${dbName}\``,
-        (err) => {
-            if (err) {
-                console.error("❌ Database creation failed:", err);
-                process.exit(1);
-            }
-
-            console.log(`✅ Database "${dbName}" ready`);
-
-            tempConnection.end();
-
-            // 🔹 Step 3: Create Pool
-            createPool();
-        }
-    );
-});
-
-// 🔹 Step 4: Create connection pool WITH database
-function createPool() {
-    db = mysql.createPool({
+    return {
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        password: process.env.DB_PASSWORD || "",
         database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
+        port: parseInt(process.env.DB_PORT || "3306", 10),
+        sslFromUrl: false,
+    };
+}
+
+function isLocalHost(host) {
+    return !host || host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+function buildPoolConfig(resolved) {
+    const poolConfig = {
+        host: resolved.host,
+        user: resolved.user,
+        password: resolved.password,
+        database: resolved.database,
+        port: resolved.port,
         waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
+        connectionLimit: isServerless ? 2 : 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+    };
+
+    const useSsl =
+        process.env.DB_SSL === "true" ||
+        resolved.sslFromUrl ||
+        (isServerless && !isLocalHost(resolved.host) && process.env.DB_SSL !== "false");
+
+    if (useSsl) {
+        poolConfig.ssl = {
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false",
+        };
+    }
+
+    if (isServerless) {
+        poolConfig.connectTimeout = 20000;
+    }
+
+    return poolConfig;
+}
+
+function bootstrapDatabase() {
+    let resolved;
+    try {
+        resolved = resolveDbConfig();
+    } catch (e) {
+        return handleDbFatal(e, "Database configuration");
+    }
+
+    const missing = ["host", "user", "database"].filter((k) => !resolved[k]);
+    if (missing.length) {
+        return handleDbFatal(
+            new Error(
+                `Missing database config (${missing.join(", ")}). ` +
+                    "Set DATABASE_URL or DB_HOST, DB_USER, DB_PASSWORD, DB_NAME in Vercel env."
+            ),
+            "Database configuration"
+        );
+    }
+
+    if (isServerless && isLocalHost(resolved.host)) {
+        return handleDbFatal(
+            new Error(
+                "DB_HOST is localhost — Vercel cannot reach your local MySQL. " +
+                    "Use a cloud database (Railway, PlanetScale, Aiven, etc.) and set DATABASE_URL."
+            ),
+            "Database configuration"
+        );
+    }
+
+    if (isServerless) {
+        createPool(resolved);
+        return;
+    }
+
+    const poolOpts = buildPoolConfig(resolved);
+    const tempConnection = mysql.createConnection({
+        host: resolved.host,
+        user: resolved.user,
+        password: resolved.password,
+        port: resolved.port,
+        ...(poolOpts.ssl ? { ssl: poolOpts.ssl } : {}),
     });
 
-    // 🔹 Step 5: Test connection
+    tempConnection.connect((err) => {
+        if (err) {
+            return handleDbFatal(err, "MySQL temp connection failed");
+        }
+
+        console.log("✅ MySQL temp connected");
+
+        tempConnection.query(
+            `CREATE DATABASE IF NOT EXISTS \`${resolved.database}\``,
+            (createErr) => {
+                if (createErr) {
+                    return handleDbFatal(createErr, "Database creation failed");
+                }
+
+                console.log(`✅ Database "${resolved.database}" ready`);
+                tempConnection.end();
+                createPool(resolved);
+            }
+        );
+    });
+}
+
+bootstrapDatabase();
+
+// 🔹 Step 4: Create connection pool WITH database
+function createPool(resolved) {
+    db = mysql.createPool(buildPoolConfig(resolved));
+
     db.getConnection((err, connection) => {
         if (err) {
-            console.error("❌ MySQL pool connection failed:", err);
-            process.exit(1);
+            const hint = isServerless
+                ? " Check DATABASE_URL, enable DB_SSL=true for cloud MySQL, and allow remote connections."
+                : "";
+            err.message = `${err.message}.${hint}`;
+            return handleDbFatal(err, "MySQL pool connection failed");
         }
 
         console.log("✅ MySQL pool connected");
-
+        poolReady = true;
         connection.release();
 
-        // 🔹 Step 6: Initialize tables (serial — no API traffic until migrations finish)
-        initializeTables();
+        if (isServerless) {
+            // Respond to requests quickly; run idempotent migrations in background
+            signalBootstrapComplete();
+            initializeTables(() => {
+                migrationsDone = true;
+                console.log("✅ Database migrations finished");
+            });
+        } else {
+            initializeTables(() => {
+                migrationsDone = true;
+                console.log("✅ Database migrations finished");
+                signalBootstrapComplete();
+            });
+        }
     });
 }
 
 // 🔹 Step 7: Create required tables (one chain — migrations always run before server listens)
-function initializeTables() {
+function initializeTables(onComplete) {
+    const done = () => {
+        if (typeof onComplete === "function") onComplete();
+    };
     const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -393,8 +523,7 @@ function initializeTables() {
 
                                                                     migrateRBACandABAC(db, () => {
                                                                         migrateUsersForSecurity(db, () => {
-                                                                            console.log("✅ Database migrations finished");
-                                                                            signalDbReady();
+                                                                            done();
                                                                         });
                                                                     });
                                                                 });

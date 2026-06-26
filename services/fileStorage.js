@@ -6,8 +6,14 @@
 const fs     = require("fs");
 const path   = require("path");
 const crypto = require("crypto");
+const os     = require("os");
 
-const UPLOAD_ROOT = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+const isServerless = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+const UPLOAD_ROOT = process.env.UPLOAD_DIR || (
+    isServerless
+        ? path.join(os.tmpdir(), "secure-cloud-uploads")
+        : path.join(process.cwd(), "uploads")
+);
 const CHUNK_DIR   = path.join(UPLOAD_ROOT, "chunks");
 const PLAIN_DIR   = path.join(UPLOAD_ROOT, "plain");
 

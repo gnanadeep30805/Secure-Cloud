@@ -9,6 +9,8 @@ const User    = require("./models/User");
 
 dotenv.config();
 
+const isServerless = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+
 // Pre-load or generate 4096-bit Server RSA Key Pair (Blocks sync on first boot)
 const { loadOrGenerateServerKeys } = require("./utils/rsaKeys");
 loadOrGenerateServerKeys();
@@ -52,6 +54,25 @@ app.use(cors());
 // DB Connection (HTTP server starts inside onReady after migrations)
 const getDB = require("./config/db");
 
+// API routes require a ready database (avoid crashes when env/DB is misconfigured)
+app.use("/api", (req, res, next) => {
+    if (req.path === "/health") return next();
+    if (!getDB.isReady()) {
+        const err = getDB.getInitError();
+        return res.status(503).json({
+            error: "Database unavailable",
+            detail: err?.message || "Database is still connecting",
+        });
+    }
+    if (!getDB.migrationsDone()) {
+        return res.status(503).json({
+            error: "Database initializing",
+            detail: "Schema migrations are still running — retry in a few seconds",
+        });
+    }
+    return next();
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
     console.log(`[LOG] ${req.method} ${req.path}`);
@@ -69,7 +90,17 @@ app.use("/api/files", fileRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.get("/api/health", (req, res) => {
-    res.json({ ok: true, service: "Secure Cloud API", ui: "/" });
+    const ready = getDB.isReady();
+    const migrated = getDB.migrationsDone();
+    const initError = getDB.getInitError();
+    res.json({
+        ok: ready && migrated,
+        service: "Secure Cloud API",
+        ui: "/",
+        database: ready ? (migrated ? "connected" : "migrating") : "unavailable",
+        migrations: migrated ? "complete" : "running",
+        ...(initError ? { dbError: initError.message } : {}),
+    });
 });
 
 const publicDir = path.join(__dirname, "frontend/public");
@@ -124,17 +155,19 @@ app.use((err, req, res, next) => {
 // Server starts only after MySQL pool + serial migrations (avoids Unknown column user_id races)
 const PORT = process.env.PORT || 5000;
 getDB.onReady(() => {
-    // Start anomaly detector after DB is ready
-    anomalyDetector.start();
-
-    app.listen(PORT, () => {
-        console.log("");
-        console.log("======== Secure Cloud (this process) ========");
-        console.log("Project:", __dirname);
-        console.log(`Listening: http://127.0.0.1:${PORT}/`);
-        console.log(`Health:    http://127.0.0.1:${PORT}/api/health`);
-        console.log("If the browser shows old text, stop OTHER Node apps using this port.");
-        console.log("==============================================");
-        console.log("");
-    });
+    if (!isServerless) {
+        anomalyDetector.start();
+        app.listen(PORT, () => {
+            console.log("");
+            console.log("======== Secure Cloud (this process) ========");
+            console.log("Project:", __dirname);
+            console.log(`Listening: http://127.0.0.1:${PORT}/`);
+            console.log(`Health:    http://127.0.0.1:${PORT}/api/health`);
+            console.log("If the browser shows old text, stop OTHER Node apps using this port.");
+            console.log("==============================================");
+            console.log("");
+        });
+    }
 });
+
+module.exports = app;

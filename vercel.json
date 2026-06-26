@@ -1,0 +1,9 @@
+{
+  "buildCommand": "node scripts/prepare-vercel.js",
+  "functions": {
+    "server.js": {
+      "maxDuration": 60,
+      "includeFiles": "node_modules/geoip-lite/**"
+    }
+  }
+}

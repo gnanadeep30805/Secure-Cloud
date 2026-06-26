@@ -11,6 +11,9 @@ node_modules/
 # User uploads / dynamic files
 uploads/
 
+# Vercel build output (copied from frontend/public)
+public/
+
 # OS metadata
 .DS_Store
 Thumbs.db
