@@ -1,173 +1,498 @@
-# Secure Cloud: Enterprise Zero-Trust Storage System
+# ☁️ Secure Cloud – Zero Trust Secure Data Protection System
 
-Secure Cloud is a state-of-the-art, high-security file storage and sharing platform built on the principles of **Zero-Trust Architecture (ZTA)**. Unlike traditional systems that trust users once they log in, Secure Cloud operates on the "Never Trust, Always Verify" paradigm, evaluating every single request against real-time context, device integrity, and behavioral heuristics.
+<div align="center">
 
----
+![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?style=for-the-badge&logo=node.js)
+![Express.js](https://img.shields.io/badge/Express.js-Framework-000000?style=for-the-badge&logo=express)
+![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql)
+![AES-256](https://img.shields.io/badge/Encryption-AES--256--GCM-red?style=for-the-badge)
+![Zero Trust](https://img.shields.io/badge/Security-Zero%20Trust-blue?style=for-the-badge)
+![Research](https://img.shields.io/badge/IEEE-Research%20Project-success?style=for-the-badge)
 
-## 🔒 The 10 Pillars of Security
+### 🔒 Secure Data Protection for Cloud Computing using Zero Trust Architecture (ZTA)
 
-This project implements a comprehensive security framework across all layers of the application:
+**Continuous Verification • Adaptive Authorization • End-to-End Encryption**
 
-1.  **Policy Engine (PE):** A centralized decision-making hub that evaluates global security constraints (time-windows, geo-fencing, and trust thresholds) before granting access.
-2.  **Policy Enforcement Point (PEP):** A fail-secure middleware gateway that intercepts every request, ensuring no data is served without explicit verification.
-3.  **Policy Administration Point (PAP):** A dedicated Admin Control Plane to manage dynamic security policies, roles, and user attributes in real-time.
-4.  **Context-Aware Access Control:** Real-time request enrichment tracking VPN usage, IP reputation, session age, and "Impossible Travel" anomalies.
-5.  **Device-Trust & Endpoint Security:** Cryptographic device fingerprinting that assigns a "Trust Score" to each hardware client, preventing access from unauthorized or unknown devices.
-6.  **Continuous Verification:** Security context is re-evaluated for every chunk of data uploaded or downloaded, ensuring session integrity throughout the transaction.
-7.  **Audit Logging & Monitoring:** A tamper-evident audit chain using SHA-512 HMAC-linked logs, providing forensic-grade visibility into all system activities.
-8.  **Fine-Grained Access Control (RBAC + ABAC):** Combines hierarchical Role-Based Access Control (Admin, Editor, Viewer, Guest) with flexible Attribute-Based Access Control (Department-level ownership, Clearance levels).
-9.  **Risk-Based Authentication (RBA):** Heuristic-based risk engine that triggers "Step-Up" challenges (TOTP/Email MFA) when suspicious behavior is detected.
-10. **Data Link Layer Security:** Advanced AES-256-GCM chunked streaming for storage, paired with RSA-2048 key wrapping to protect encryption keys at rest.
+</div>
 
 ---
 
-## 🚀 Technology Stack
+# 📖 Overview
 
-*   **Backend:** Node.js, Express.js
-*   **Database:** MySQL (Structured Schema for Security Policies)
-*   **Cryptography:** 
-    *   **AES-256-GCM:** Authenticated Encryption with Associated Data (AEAD).
-    *   **RSA-2048/4096:** Asymmetric key wrapping and digital signatures.
-    *   **SHA-512:** Secure hashing for integrity and audit chains.
-*   **Authentication:** JWT (Stateful with Session Pinning), Speakeasy (TOTP MFA), QRCode generation.
-*   **Frontend:** Vanilla JavaScript (SPA Architecture), Modern CSS3 (Glassmorphism design).
+**Secure Cloud** is a research-oriented cloud security system designed to provide secure file storage and access using the principles of **Zero Trust Architecture (ZTA)**.
+
+Unlike traditional cloud systems that trust users after login, Secure Cloud continuously verifies every access request based on user identity, device trust, roles, attributes, and risk level before allowing access to protected resources.
+
+The system integrates modern security mechanisms including:
+
+- Zero Trust Architecture (NIST SP 800-207)
+- AES-256-GCM Encryption
+- JWT Authentication
+- Role-Based Access Control (RBAC)
+- Attribute-Based Access Control (ABAC)
+- Risk-Based Authentication (RBA)
+- Device Fingerprinting
+- Secure Audit Logging
+
+This project was developed as part of a research paper on cloud security.
 
 ---
 
-## 📂 Project Structure
+# 🎯 Problem Statement
 
-```text
-secure-cloud/
-├── config/             # Database & Security Configuration
-├── controllers/        # Core logic for Files, Auth, and Admin
-├── middleware/         # PEP, ThreatGuard, and RBA logic
-├── models/             # Database access objects
-├── routes/             # API Route definitions
-├── services/           # Security Engines (Policy, ABAC, RBAC, Risk)
-├── utils/              # Cryptography, Mail, and Activity helpers
-├── frontend/           # SPA Frontend
-│   └── public/         # HTML, CSS, and App logic
-└── server.js           # Main application entry point
+Traditional cloud systems generally authenticate users only once during login. Once authenticated, users often gain broad access to cloud resources, making systems vulnerable to:
+
+- Unauthorized Access
+- Insider Threats
+- Credential Theft
+- Session Hijacking
+- Data Leakage
+- Privilege Escalation
+- Lateral Movement Attacks
+
+Secure Cloud addresses these challenges by implementing a **Zero Trust security model**, where **every request is verified before access is granted**.
+
+---
+
+# ✨ Key Features
+
+## 🔐 Zero Trust Authentication
+
+Every request is validated through:
+
+- Identity Verification
+- Role Validation
+- Device Verification
+- Context Evaluation
+- Risk Assessment
+- Continuous Authorization
+
+---
+
+## 🛡 Role-Based Access Control (RBAC)
+
+Supports multiple user roles:
+
+- 👑 Admin
+- ✏️ Editor
+- 👀 Viewer
+- 👤 Guest
+
+Each role has predefined permissions for accessing cloud resources.
+
+---
+
+## 📋 Attribute-Based Access Control (ABAC)
+
+Access decisions are made using:
+
+- User Role
+- Department
+- Time
+- Device
+- IP Address
+- Request Context
+- Resource Sensitivity
+
+---
+
+## ⚠️ Risk-Based Authentication (RBA)
+
+The system dynamically evaluates login risks based on:
+
+- Unknown Devices
+- Suspicious Login Patterns
+- Device Fingerprints
+- User Context
+- Session Information
+
+High-risk requests require additional verification.
+
+---
+
+## 🔒 AES-256-GCM File Encryption
+
+Files are encrypted before storage using:
+
+- AES-256-GCM
+- Random IV Generation
+- Authentication Tags
+- Streaming Encryption
+- Secure Key Management
+
+Benefits:
+
+- Confidentiality
+- Integrity
+- Authentication
+
+---
+
+## 📂 Secure File Management
+
+Users can:
+
+- Upload Files
+- Download Files
+- Delete Files
+- View File Metadata
+- Encrypt Files Automatically
+- Verify File Integrity
+
+---
+
+## 📱 Device Fingerprinting
+
+Each login device is identified using:
+
+- Browser Information
+- Screen Resolution
+- Timezone
+- User Agent
+- Canvas Fingerprint
+
+This helps detect suspicious device changes.
+
+---
+
+## 📊 Secure Audit Logs
+
+Every important activity is logged, including:
+
+- Login Attempts
+- File Uploads
+- Downloads
+- Access Requests
+- Authorization Decisions
+- Security Events
+
+---
+
+# 🏗 System Architecture
+
+```
+                     Client
+                        │
+                        ▼
+              Authentication Layer
+                        │
+                        ▼
+             Policy Enforcement Point
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+      RBAC Engine   ABAC Engine   Risk Engine
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+               Policy Decision Point
+                        │
+                        ▼
+             AES-256-GCM Encryption
+                        │
+                        ▼
+                  Cloud Storage
+                        │
+                        ▼
+                  MySQL Database
 ```
 
 ---
 
-## 🛠️ Installation & Setup
+# 🔐 Security Components
 
-### Prerequisites
-*   Node.js (v16+)
-*   MySQL Server (v8.0+)
+## Policy Enforcement Point (PEP)
 
-### 1. Database Configuration
-Create a database named `secure_cloud` and configure your credentials in the `.env` file.
+- Intercepts every API request
+- Validates authentication
+- Enforces security policies
 
-### 2. Environment Variables (`.env`)
-Ensure your `.env` contains the following critical keys:
-```env
-DB_HOST=127.0.0.1
-DB_USER=your_user
-DB_PASSWORD=your_password
-DB_NAME=secure_cloud
-DB_PORT=3306
+---
 
-JWT_SECRET=your_jwt_secret
-HMAC_SECRET=your_hmac_secret
-SECRET_KEY=your_aes_32byte_hex_key
+## Policy Decision Point (PDP)
+
+Determines whether access should be:
+
+- Allow
+- Deny
+- Require Additional Verification
+
+---
+
+## Role-Based Access Control
+
+Assigns permissions based on user roles.
+
+Example:
+
+| Role | Upload | Download | Delete |
+|------|----------|------------|-----------|
+| Admin | ✅ | ✅ | ✅ |
+| Editor | ✅ | ✅ | ❌ |
+| Viewer | ❌ | ✅ | ❌ |
+| Guest | ❌ | ❌ | ❌ |
+
+---
+
+## Attribute-Based Access Control
+
+Evaluates multiple attributes:
+
+- User Role
+- Device
+- Login Time
+- Department
+- Resource Type
+- Access Context
+
+---
+
+## Risk Engine
+
+Calculates authentication risk before granting access.
+
+Factors considered:
+
+- New Device
+- Multiple Failed Logins
+- Suspicious Activity
+- Session Behavior
+
+---
+
+# 🛠 Technology Stack
+
+## Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+
+---
+
+## Backend
+
+- Node.js
+- Express.js
+
+---
+
+## Database
+
+- MySQL
+
+---
+
+## Authentication
+
+- JWT
+- bcrypt
+- Session Management
+
+---
+
+## Security
+
+- AES-256-GCM
+- SHA-256
+- Zero Trust Policies
+- Device Fingerprinting
+
+---
+
+# 📂 Project Structure
+
+```
+Secure-Cloud/
+
+│
+├── client/
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── pages/
+│
+├── server/
+│   ├── config/
+│   ├── middleware/
+│   ├── routes/
+│   ├── controllers/
+│   ├── models/
+│   ├── services/
+│   ├── encryption/
+│   └── utils/
+│
+├── uploads/
+├── database/
+├── docs/
+├── screenshots/
+└── README.md
 ```
 
-### 3. Run the Project
+---
+
+# 🚀 Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/gnanadeep30805/Secure-Cloud.git
+```
+
+---
+
+## Navigate
+
+```bash
+cd Secure-Cloud
+```
+
+---
+
+## Install Dependencies
+
 ```bash
 npm install
+```
+
+---
+
+## Configure Environment Variables
+
+Create a `.env` file.
+
+```env
+PORT=5000
+
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=secure_cloud
+
+JWT_SECRET=your_secret_key
+
+AES_SECRET_KEY=your_aes_secret_key
+```
+
+---
+
+## Start the Server
+
+```bash
 npm start
 ```
-*The system will automatically run migrations and seed default security policies on the first boot.*
+
+or
+
+```bash
+npm run dev
+```
 
 ---
 
-## 📖 Usage Guide
+# 📸 Screenshots
 
-### User Flow
-1.  **Signup:** Register an account. You will be presented with a **TOTP QR Code**. Scan this into Google Authenticator.
-2.  **Login:** Enter credentials and your 6-digit TOTP code.
-3.  **Upload:** Choose between "Plain" or "Encrypted" modes. Encrypted files are streamed directly into AES-256-GCM chunks.
-4.  **Download:** To download, you must verify the file's integrity using a fresh TOTP code. For encrypted files, the system performs a multi-stage decryption handshake.
+Include screenshots of:
 
-### Admin Flow
-1.  **Promotion:** Access to the Admin Panel requires the `admin` role (assignable via DB or existing admin).
-2.  **Dashboard:** Navigate to "Admin Panel" to view active ABAC policies.
-3.  **Management:** Assign roles to other users by their User ID to control system-wide permissions.
-
----
-
-## 🏗️ Architecture Deep-Dive
-
-### Event-Driven Security
-Secure Cloud uses a **Typed Security Event Bus** (`services/eventBus.js`) that acts as the central nervous system. 
-*   Every login, file access, and policy violation emits a typed event.
-*   The **Anomaly Detector** (`services/anomalyDetector.js`) listens for these events in the background to detect brute-force attacks or suspicious scanning patterns across different IP addresses.
-
-### Database Schema Highlights
-The system relies on several specialized security tables:
-*   `abac_policies`: Stores fine-grained attribute rules in JSON format.
-*   `audit_logs`: The immutable forensic record of every system decision.
-*   `user_roles` & `role_permissions`: The hierarchical backbone of the RBAC system.
-*   `risk_scores`: Persistent tracking of user and device behavior over time.
+- Login Page
+- Dashboard
+- File Upload
+- File Encryption
+- Access Control
+- User Management
+- Audit Logs
 
 ---
 
-## 🌐 API Endpoint Reference
+# 📊 Research Highlights
 
-| Category | Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- |
-| **Auth** | `/api/auth/signup` | POST | Register + Generate TOTP Secret |
-| **Auth** | `/api/auth/login` | POST | Verify credentials + TOTP |
-| **Auth** | `/api/auth/step-up`| POST | Verify RBA Identity Challenges |
-| **Files** | `/api/files/list` | GET | List accessible files (ABAC filtered) |
-| **Files** | `/api/files/upload` | POST | AES-GCM Chunked Stream Upload |
-| **Files** | `/api/files/download`| GET | Integrity Handshake + Stream Download|
-| **Admin** | `/api/admin/policies` | GET | List active ABAC policies |
-| **Admin** | `/api/admin/users/:id/role`| POST | Update user role (RBAC) |
+- Implements **Zero Trust Architecture (NIST SP 800-207)**
+- Continuous Authentication & Authorization
+- Hybrid Access Control (RBAC + ABAC + RBA)
+- Secure File Encryption using AES-256-GCM
+- Device Fingerprinting
+- Secure Audit Trail
+- Protection against Insider Threats
+- Improved Cloud Security Model
 
 ---
 
-## 🛡️ Security Mechanisms Details
+# 🔬 Future Enhancements
 
-### AES-256-GCM Streaming
-Unlike standard encryption, Secure Cloud uses a streaming buffer. This allows files of any size (GBs) to be encrypted/decrypted with minimal RAM usage while providing built-in integrity checking to prevent "Bit-Flipping" attacks.
-
-### Impossible Travel Detection
-The system tracks the geo-location of every request. If a user logs in from New York and 5 minutes later attempts an action from London, the system flags "Impossible Travel" and immediately locks the account.
-
-### HMAC Audit Chain
-Every log entry contains an HMAC hash that includes the hash of the *previous* log entry. This creates a linked chain; if an attacker modifies a single log in the database, the entire chain breaks, alerting administrators to the tampering.
-
----
-
-## 🛠️ Developer Tools & Testing
-
-The project includes several utilities for maintenance and verification:
-
-*   **`test-integration.js`**: A full suite of automated integration tests that simulate the entire PEP/RBAC/ABAC pipeline. Run with `node test-integration.js`.
-*   **`promote.js`**: A helper script to quickly promote the first user in the database to the `Admin` role for testing.
-*   **`test_admin_panel.js`**: A diagnostic script that verifies the Admin API endpoints by forging a valid administrative JWT.
-*   **`utils/rsaKeys.js`**: Utility to regenerate the server's RSA key pair (used for secure key wrapping).
+- Multi-Factor Authentication (MFA)
+- Behavioral Biometrics
+- AI-Based Threat Detection
+- Blockchain-Based Audit Logs
+- Post-Quantum Cryptography (Kyber & Dilithium)
+- Fully Homomorphic Encryption (FHE)
+- Machine Learning Risk Engine
+- Continuous Behavioral Authentication
 
 ---
 
-## 🎨 UI/UX & Aesthetics
+# 📚 Research Reference
 
-Secure Cloud isn't just about security—it's designed to provide a premium, modern experience.
-*   **Rich Aesthetics:** The frontend uses a **Glassmorphism** design language with vibrant gradients and subtle micro-animations.
-*   **Responsive Logic:** The Single Page Application (SPA) architecture ensures smooth transitions between the Dashboard, Upload, and Admin pages without page reloads.
-*   **Dynamic Typography:** Integrated with Google Fonts (DM Sans) for high readability and a professional enterprise feel.
+This project is based on the concepts presented in:
 
----
+**Secure Data Protection for Cloud Computing with Zero Trust Architecture**
 
-## 💡 Project Philosophy
-This project was built to demonstrate that high-level security does not have to come at the cost of user experience. By automating complex cryptographic handshakes and context evaluations in the background, we provide an "Invisible Security" layer that protects users without slowing them down.
+The implementation follows the security principles defined in **NIST SP 800-207 (Zero Trust Architecture)** while extending the model with adaptive access control and secure encryption mechanisms.
 
 ---
 
-## 📝 License
-Proprietary / Enterprise-Grade Security Demo.
-Developed as a Comprehensive Zero-Trust Implementation.
+# 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork the repository
+
+2. Create a new feature branch
+
+```bash
+git checkout -b feature-name
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Added new feature"
+```
+
+4. Push to GitHub
+
+```bash
+git push origin feature-name
+```
+
+5. Create a Pull Request
+
+---
+
+# ⭐ Support
+
+If you found this project useful, consider giving it a **⭐ Star** on GitHub.
+
+It helps others discover the project and motivates further development.
+
+---
+
+# 👨‍💻 Author
+
+**Gnana Deep**
+
+🎓 Computer Science Student  
+☁️ Cloud Security Researcher  
+🔒 Cybersecurity Enthusiast  
+💻 Full Stack Developer
+
+---
+
+<div align="center">
+
+## 🔐 Trust Nothing. Verify Everything.
+
+**Secure Cloud demonstrates how Zero Trust Architecture can significantly enhance cloud security through continuous verification, adaptive authorization, and end-to-end encryption.**
+
+Made with ❤️ using Node.js, Express.js, MySQL & Zero Trust Architecture
+
+</div>
