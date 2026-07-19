@@ -6,8 +6,6 @@
 ![Express.js](https://img.shields.io/badge/Express.js-Framework-000000?style=for-the-badge&logo=express)
 ![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql)
 ![AES-256](https://img.shields.io/badge/Encryption-AES--256--GCM-red?style=for-the-badge)
-![Zero Trust](https://img.shields.io/badge/Security-Zero%20Trust-blue?style=for-the-badge)
-![Research](https://img.shields.io/badge/IEEE-Research%20Project-success?style=for-the-badge)
 
 ### 🔒 Secure Data Protection for Cloud Computing using Zero Trust Architecture (ZTA)
 
